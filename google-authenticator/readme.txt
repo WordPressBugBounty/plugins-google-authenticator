@@ -1,85 +1,149 @@
 === Google Authenticator ===
 Contributors: ivankk
-Tags: authentication,otp,password,security,login
+Tags: authentication, otp, password, security, login
 Requires at least: 4.5
-Tested up to: 7.1
-Stable tag: 0.57
+Tested up to: 7.2
+Requires PHP: 7.2
+Stable tag: 0.59
 License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Google Authenticator for your WordPress blog.
+Two-factor authentication for WordPress using Google Authenticator or any other time-based (TOTP) authenticator app.
 
 == Description ==
 
-The Google Authenticator plugin for WordPress gives you two-factor authentication using the Google Authenticator app for Android/iPhone/Blackberry.
+Google Authenticator adds a second step to the WordPress login. After their password, users enter a 6-digit code from an authenticator app on their phone, so a stolen password alone is no longer enough to get in.
 
-If you are security aware, you may already have the Google Authenticator app installed on your smartphone, using it for two-factor authentication on Gmail/Dropbox/Lastpass/Amazon etc.
+It works with Google Authenticator and any other app that supports time-based one-time passwords (TOTP), such as Microsoft Authenticator, Authy, 1Password, Bitwarden or KeePassXC.
 
-The two-factor authentication requirement can be enabled on a per-user basis. You could enable it for your administrator account, but log in as usual with less privileged accounts.
+**Features**
 
-If You need to maintain your blog using an Android/iPhone app, or any other software using the XMLRPC interface, you can enable the App password feature in this plugin, 
-but please note that enabling the App password feature will make your blog less secure.
+* **Per-user two-factor authentication.** Each user turns it on from their profile and scans a QR code with their app.
+* **Mandatory 2FA by role.** Administrators can require it for chosen roles, such as Administrator and Editor. Users with any of those roles are sent to a setup page until they have enrolled. On multisite this can be set per site or for the whole network, and the network settings can also require it for all Super Admins.
+* **Brute-force protection.** After 5 wrong codes sent with the correct password, further attempts are blocked for 1 minute, doubling with each further wrong code up to 1 hour.
+* **Replay protection.** Each code can only be used once.
+* **Two-screen sign-in (optional).** Ask for the code on a second screen after the username and password.
+* **Relaxed mode** for phones whose clock drifts, accepting codes from up to 4 minutes either side.
+* **App passwords** for XML-RPC clients that can't ask for a code.
+* **Admin controls.** Administrators can turn two-factor authentication off for a user, or hide the settings from them.
+
+Please note that turning on the App password feature lowers the security of that account: XML-RPC logins with an app password don't need a code, only the long app password.
 
 == Installation ==
-1. Make sure your webhost is capable of providing accurate time information for PHP/WordPress, ie. make sure a NTP daemon is running on the server.
+
+1. Make sure your server's clock is accurate (for example, that an NTP service is running). The codes are time based, so a wrong server clock means codes won't match.
 2. Install and activate the plugin.
-3. Enter a description on the Users -> Profile and Personal options page, in the Google Authenticator section.
-4. Scan the generated QR code with your phone, or enter the secret manually, remember to pick the time based one.  
-You may also want to write down the secret on a piece of paper and store it in a safe place. 
-5. Remember to hit the **Update profile** button at the bottom of the page before leaving the Personal options page.
-6. That's it, your WordPress blog is now a little more secure.
+3. Go to **Users → Profile** and find the **Google Authenticator Settings** section.
+4. Scan the QR code with your authenticator app, or type in the secret (choose "time based"). You may also want to write the secret down and keep it somewhere safe.
+5. Tick **Active**, type the code your app shows into **Authenticator Code** and click **Update Profile**. Google Authenticator is only turned on if the code is right, so a mistake when adding the site to the app can't lock you out.
+6. Optional: go to **Settings → Google Authenticator** to require two-factor authentication for certain roles or to turn on two-screen sign-in. On multisite, network-wide settings are under **Network Admin → Settings → Google Authenticator**.
 
 == Frequently Asked Questions ==
 
-= Can I use Google Authenticator for WordPress with the Android/iPhone apps for WordPress? =
+= Which authenticator apps can I use? =
 
-Yes, you can enable the App password feature to make that possible, but notice that the XMLRPC interface isn't protected by two-factor authentication, only a long password.
+Any app that supports time-based one-time passwords (TOTP), including Google Authenticator, Microsoft Authenticator, Authy, 1Password, Bitwarden and KeePassXC. Several of these also run on a computer, so a smartphone isn't required.
 
-= I want to update the secret, should I just scan the new QR code after creating a new secret? =
+= Can I use it with apps that log in over XML-RPC? =
 
-No, you'll have to delete the existing account from the Google Authenticator app on your smartphone before you scan the new QR code, that is unless you change the description as well.
+Yes. Enable the App password feature on your profile, click **Create new password**, and use that password in the app. Note that XML-RPC logins with an app password aren't protected by a verification code, only by the long app password.
 
-= I am unable to log in using this plugin, what's wrong ? =
+= Does two-factor authentication apply to WordPress Application Passwords (REST API)? =
 
-The Google Authenticator verification codes are time based, so it's crucial that the clock in your phone is accurate and in sync with the clock on the server where your WordPress installation is hosted.
-If you have an Android phone, you can use an app like [ClockSync](https://market.android.com/details?id=ru.org.amip.ClockSync) to set your clock in case your Cell provider doesn't provide accurate time information
-Another option is to enable "relaxed mode" in the settings for the plugin, this will enable more valid codes by allowing up to a 4 min. timedrift in each direction.
+No. WordPress's built-in Application Passwords (under **Users → Profile → Application Passwords**) are used by REST API clients and don't go through the login form, by WordPress's design. They can only be created by someone who is already logged in. If you don't use them, you can turn them off with the `wp_is_application_passwords_available` filter.
 
-= I have several users on my WordPress installation, is that a supported configuration ? =
+= I can't log in. What's wrong? =
 
-Yes, each user has his own Google Authenticator settings.
+The codes are time based, so the clock on your phone must match the clock on your web server. Make sure your phone sets its date and time automatically, and that your server's clock is correct.
 
-= During installation I forgot the thing about making sure my webhost is capable of providing accurate time information, I'm now unable to login, please help. =
+You can also enable **Relaxed mode** in your profile, which accepts codes from up to 4 minutes either side.
 
-If you have SSH or FTP access to your webhosting account, you can manually delete the plugin from your WordPress installation,
-just delete the wp-content/plugins/google-authenticator directory, and you'll be able to login using username/password again.
+= I'm locked out. How do I get back in? =
 
-= I don't own a Smartphone, isn't there another way to generate these secret codes ? =
+* Another administrator can untick **Active** in the Google Authenticator section of your user's edit page.
+* With WP-CLI: `wp user meta update <your-username> googleauthenticator_enabled disabled`
+* With SFTP or SSH access, rename or delete the `wp-content/plugins/google-authenticator` folder. You can then log in with your username and password, and put the plugin back afterwards.
 
-Yes, there is a webbased version here : https://gauth.apps.gbraad.nl/
-Github project here : https://github.com/gbraad/gauth
+= It says "Too many incorrect Google Authenticator codes". What now? =
 
-= Can I create backupcodes ? =
+Wait for the time shown and try again. Blocks start at 1 minute and double with each further wrong code, up to 1 hour. A successful login resets the count.
 
-No, but if you're using an Android smartphone you can replace the Google Authenticator app with [Authenticator Plus](https://play.google.com/store/apps/details?id=com.mufri.authenticatorplus).  
-It's a really nice app that can import your existing settings, sync between devices and backup/restore using your sd-card.  
-It's not a free app, but it's well worth the money.
+Only wrong codes sent together with the correct password count. If you didn't cause the block yourself, someone else knows your password: change it.
 
-= Any known incompatabilities ? =
+= Can I create backup codes? =
 
-Yes, the Man-in-the-middle attack/replay detection code isn't compatible with the test/setup mode in the "Stop spammer registration plugin",
-please remember to remove the "Check credentials on all login attempts" checkmark before installing my plugin.
+The plugin doesn't generate backup codes. Use an authenticator app that backs up or syncs your accounts (Google Authenticator can sync to your Google account, and Microsoft Authenticator, 1Password and Bitwarden have backups too), and keep a copy of your secret somewhere safe. An administrator can also turn two-factor authentication off for your account.
 
+= I want to change my secret. Do I just scan the new QR code? =
 
+Click **Create new secret**, scan the new QR code, type the code your app shows for it into **Authenticator Code** and click **Update Profile**. The new secret is only saved if the code is right; after that you can delete the old entry from your app.
+
+= Does it work with multiple users? =
+
+Yes. Each user has their own secret and settings.
+
+= Are there hooks for developers? =
+
+* `google_authenticator_needs_setup` (filter): whether the current user must set up two-factor authentication.
+* `google_authenticator_allowed_failed_codes` (filter): wrong codes allowed before attempts are blocked. Default 5.
+* `google_authenticator_lockout_duration` (filter): length of a block in seconds. Default 60, doubling up to 3600.
+* `google_authenticator_failed_code` (action): fires when a wrong code is sent with the correct password.
+* `google_authenticator_code_reused` (action): fires when a code that was already used is sent again.
+* `google_authenticator_default_description` (filter): the description suggested for a user's entry in their authenticator app. Default: the site name. For example, to tell several accounts on the same site apart: `add_filter( 'google_authenticator_default_description', function ( $description, $user ) { return $description . ' (' . $user->user_login . ')'; }, 10, 2 );`
+* `google_authenticator_hide_settings` (filter): whether to hide the Google Authenticator settings from a user's profile page. Receives the user's "Hide settings from user" setting and the user ID, so you can hide them for whole roles or for everyone. The mandatory setup page is always shown.
+
+Wrong codes also fire WordPress's standard `wp_login_failed` action, so login-limiting plugins see them.
+
+= Any known incompatibilities? =
+
+Yes. The replay protection isn't compatible with the test/setup mode of the "Stop Spammer Registrations" plugin. Untick its "Check credentials on all login attempts" option before installing this plugin.
 
 == Screenshots ==
 
-1. The enhanced log-in box.
-2. Google Authenticator section on the Profile and Personal options page.
-3. QR code on the Profile and Personal options page.
-4. Google Authenticator app on Android
+1. The login form with the Google Authenticator code field.
+2. The Google Authenticator section on the Profile page.
+3. The QR code on the Profile page.
+4. The Google Authenticator app on Android.
+5. An example QR code to scan with your authenticator app.
 
 == Changelog ==
+
+= 0.59 =
+* Turning on Google Authenticator from the profile page, or saving a new secret while it is on, now needs a code from your authenticator app, so a mistake when adding the site to the app can no longer lock you out. Administrators can still turn it on for other users without a code.
+* On multisite, the network settings can now require 2FA for all Super Admins, including those with no role on a site.
+* Codes copied from an authenticator app are now accepted with any separator between the digits, such as "012 345", "012-345" or the no-break and thin spaces some apps and phones insert. Previously any space made a valid code fail.
+* New filters `google_authenticator_default_description` and `google_authenticator_hide_settings`, and "Hide settings from user" no longer hides the mandatory setup page.
+* Fixed the spelling of the "Successfully saved" settings messages, so they are now translated too.
+* Translations: the new strings are translated into all 24 languages. Like the rest, they are machine-assisted, so corrections from native speakers are welcome on translate.wordpress.org.
+
+= 0.58 =
+* Security: Wrong verification codes are now rate limited. After 5 wrong codes sent with the correct password, further attempts are blocked for 1 minute, doubling up to 1 hour. Previously the 6 digit code could be brute-forced by anyone who knew the password.
+* Security: The verification code is only checked once the password is correct, and a wrong password and a wrong code now return the same error.
+* Security: The 2FA secret shown on the setup and profile pages can no longer be set from a link (secret fixation).
+* Security: Mandatory 2FA now applies when any of a user's roles requires it, not only their first role.
+* Security: The setup page can no longer replace the secret of an account that already has 2FA enabled.
+* Security: Errors from other login checks (lockout or captcha plugins) are no longer overridden by App password logins.
+* Hardening: Stricter validation of verification codes and secrets, input unslashing and output escaping throughout.
+* Fixed two screen sign-in for passwords containing quotes or backslashes.
+* Fixed site settings on multisite being editable only when network-wide settings were enforced (the reverse of what was intended).
+* Fixed the network settings page on WordPress 4.5.
+* Login form: the code field now lines up with the username and password fields in every browser. It uses the same markup as WordPress's own fields; it was slightly narrower in some browsers, such as Safari.
+* Login form: the "leave this field empty" hint is now a help button next to the label (WordPress 7.1 and later), so it can be read on phones and by screen readers.
+* Login form: Safari and password managers can fill in the code automatically, and phones show a number keypad.
+* Login form: the cursor now starts in the username field, as on a normal WordPress login, instead of jumping to the code field. On the two-screen sign-in page it still starts in the code field.
+* Login form: a wrong code shakes the form, like a wrong password does.
+* Codes typed with full-width digits (for example with a Japanese input method) are now accepted in every browser.
+* Fixed the QR code for descriptions or site names with non-English characters. They were encoded incorrectly, so authenticator apps could show a garbled name or reject the code.
+* Fixed the setup page not sending users who already have two-factor authentication enabled back to the dashboard.
+* Updated the list of authenticator apps on the setup page (Google Authenticator, Microsoft Authenticator and Authy) and removed discontinued ones.
+* Removed a stray space at the end of newly generated app passwords.
+* New action `google_authenticator_code_reused`. The "Man-in-the-middle attack detected" message is now only written to the PHP error log when WP_DEBUG is on.
+* Code cleanup for the WordPress coding standards and Plugin Check: safe redirects, translator comments and text domains, current jQuery methods (no more jQuery Migrate warnings), and removal of obsolete code.
+* Updated the translation template.
+* Translations: added Arabic, Chinese (Taiwan), Czech, Hungarian, Indonesian, Japanese, Korean, Persian, Portuguese (Portugal), Russian, Spanish (Mexico), Turkish, Ukrainian and Vietnamese, and completed and corrected the existing ten languages. All 24 now cover every string. The new and corrected strings are machine-assisted, so corrections from native speakers are very welcome on translate.wordpress.org.
+* Tested with WordPress 7.2 and PHP 7.2 to 8.6.
+* Updated readme and FAQ.
+
 = 0.57 =
 * Security: Fixed an authentication bypass where an empty app password could be accepted over XML-RPC (CVE-2026-88759). Thanks to Kuba (Wordfence).
 * Saving the profile no longer stores an app password unless one has actually been generated.
@@ -120,18 +184,18 @@ please remember to remove the "Check credentials on all login attempts" checkmar
 = 0.48 =
 * Security fix / compatability with WordPress 4.5
 
-= 0.47 =  
+= 0.47 =
 * Google chart API replaced with jquery-qrcode
 * QR codes now contain a heading saying WordPress (Feature request by Flemming Mahler)
 * Danish translation & updated .pot file.
 * Plugin now logs login attempts recognized as Man-in-the-middle attacks.
 
-= 0.46 =  
+= 0.46 =
 * Man-in-the-middle attack protection added.
 * Show warning before displaying the QR code.
 * FAQ updated.
 
-= 0.45 =  
+= 0.45 =
 * Spaces in the description field should now work on iPhones.
 * Some depricated function calls replaced.
 * Code inputfield easier to use for .jp users now.
@@ -139,54 +203,64 @@ please remember to remove the "Check credentials on all login attempts" checkmar
 * App password hash function switched to one that doesn't have rainbow tables available.
 * PHP notices occurring during app password login removed.
 
-= 0.44 =  
+= 0.44 =
 * Installation/FAQ section updated.
-* Simplified Chinese translation by Kaijia Feng added. 
+* Simplified Chinese translation by Kaijia Feng added.
 * Tabindex on loginpage removed, no longer needed, was used by older WordPress installations.
 * Inputfield renamed to "googleotp".
 * Defaultdescription changed to "WordPressBlog" to avoid trouble for iPhone users.
 * Compatibility with Ryan Hellyer's plugin http://geek.ryanhellyer.net/products/deactivate-google-authenticator/
 * Must enter all 6 code digits.
 
-= 0.43 =  
+= 0.43 =
 * It's now possible for an admin to hide the Google Authenticaator settings on a per-user basis. (Feature request by : Skate-O)
 
-= 0.42 =  
+= 0.42 =
 * Autocomplete disabled on code input field. (Feature request by : hiphopsmurf)
 
-= 0.41 =  
+= 0.41 =
 * Italian translation by Aldo Latino added.
 
-= 0.40 =  
+= 0.40 =
 * Bugfix, typo corrected and PHP notices removed. Thanks to Dion Hulse for his patch.
 
-= 0.39 =  
+= 0.39 =
 * Bugfix, Description was not saved to WordPress database when updating profile. Thanks to xxdesmus for noticing this.
 
-= 0.38 =  
+= 0.38 =
 * Usability fix, input field for codes changed from password to text type.
 
-= 0.37 =  
+= 0.37 =
 * The plugin now supports "relaxed mode" when authenticating. If selected, codes from 4 minutes before and 4 minutes after will work. 30 seconds before and after is still the default setting.
 
-= 0.36 =  
+= 0.36 =
 * Bugfix, now an App password can only be used for XMLRPC/APP-Request logins.
 
-= 0.35 =  
+= 0.35 =
 * Initial WordPress app support added (XMLRPC).
 
-= 0.30 =  
+= 0.30 =
 * Code cleanup
 * Changed generation of secret key, to no longer have requirement of SHA256 on the server
 * German translation
 
-= 0.20 =  
+= 0.20 =
 * Initial release
 
+
+== Upgrade Notice ==
+
+= 0.58 =
+Security release: adds brute-force protection for verification codes and fixes several other security issues. Please update.
+
+= 0.57 =
+Security release: fixes an XML-RPC authentication bypass (CVE-2026-88759). Please update.
 
 == Credits ==
 
 Thanks to:
+
+[Kuba](https://www.wordfence.com/) (Wordfence) for responsibly disclosing an XML-RPC app password authentication bypass.
 
 [Miguel Mendez Z](https://wpscan.com/) for responsibly disclosing a CSRF account lockout vulnerability.
 
